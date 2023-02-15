@@ -43,8 +43,8 @@ class Asset:
         self.R_room_inv = np.zeros(len(zones))
         self.R_infiltration_inv = np.zeros(len(zones))
 
-        self.C_wall = np.zeros(len(zones))
-        self.C_room = np.zeros(len(zones))
+        self.C_wall_inv = np.zeros((len(zones), 1))
+        self.C_room_inv = np.zeros((len(zones), 1))
 
         for i, zone in enumerate(zones):
             zone_R_inv = zone.get_R_inv()
@@ -55,15 +55,15 @@ class Asset:
             self.R_infiltration_inv[i] = zone_R_inv[4]
 
             zone_C_inv = zone.get_C_inv()
-            self.C_wall[i] = zone_C_inv[0]
-            self.C_room[i] = zone_C_inv[1]
+            self.C_wall_inv[i, 0] = zone_C_inv[0]
+            self.C_room_inv[i, 0] = zone_C_inv[1]
         
         self.R_partWall_inv = R_partWall_inv
 
         for i, row in enumerate(C_partWall_inv):
             for elem in row:
-                self.C_wall[i] += 0.25*elem
-                self.C_room[i] += 0.25*elem
+                self.C_wall_inv[i, 0] += 0.25*elem
+                self.C_room_inv[i, 0] += 0.25*elem
     
     def update_infiltration(self, zone_name, R_infiltration_inv):
         for i, zone in enumerate(self.zones):
@@ -71,27 +71,27 @@ class Asset:
                 zone.update_infiltration(R_infiltration_inv)
                 self.R_infiltration_inv[i] = R_infiltration_inv
                 return
-    
-    def get_R_partwall_inv(self):
-        return self.R_partWall_inv
+            
     
     def get_R_inv(self):
-        return np.array([self.R_ext_inv, self.R_outWall_inv, self.R_inWall_inv, self.R_room_inv, self.R_infiltration_inv])
+        return np.array([self.R_ext_inv, self.R_outWall_inv, self.R_inWall_inv, self.R_room_inv, self.R_infiltration_inv]).T
 
+    
             
-bedroom = Zone("bedroom", [1,1,1,1,0], [1,1])
-livingroom = Zone("livingroom", [1,1,1,1,0], [1,1])
-bath = Zone("bath", [1,1,1,1,0], [1,1])
+bedroom = Zone("bedroom", [0,0,10,10,0], [1,1])
+livingroom = Zone("livingroom", [0,0.1,10,10,0], [1,1])
+bath = Zone("bath", [10,10,1,1,0], [1,1])
 zones = [bedroom, livingroom, bath]
 
 R_partWall_inv = np.array([[ 0, 10, 0],
-                           [10,  0, 5],
-                           [ 0,  5, 0]])
+                           [10,  0, 1],
+                           [ 0,  1, 0]])
 
 C_partWall_inv = np.array([[0, 1, 0],
                            [1, 0, 1],
                            [0, 1, 0]])
 
-house = Asset(zones, R_partWall_inv, C_partWall_inv)
+asset = Asset(zones, R_partWall_inv, C_partWall_inv)
 
-print(house.get_R_inv()[-1])
+def get_asset():
+    return asset
