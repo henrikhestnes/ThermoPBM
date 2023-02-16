@@ -1,5 +1,4 @@
 import numpy as np
-import tensorflow as tf
 import asset
 
 def skew_difference_matrix(T: np.ndarray) -> np.ndarray:
