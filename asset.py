@@ -78,18 +78,22 @@ class Asset:
 
     
             
-bedroom = Zone("bedroom", [0,0,10,10,0], [1,1])
-livingroom = Zone("livingroom", [0,0.1,10,10,0], [1,1])
-bath = Zone("bath", [10,10,1,1,0], [1,1])
+bedroom = Zone("bedroom", [1,1,1,1,0], [1,1])
+livingroom = Zone("livingroom", [1,1,1,1,0], [1,1])
+bath = Zone("bath", [1,1,1,1,0], [1,1])
 zones = [bedroom, livingroom, bath]
 
 R_partWall_inv = np.array([[ 0, 10, 0],
                            [10,  0, 1],
                            [ 0,  1, 0]])
 
+assert np.allclose(R_partWall_inv, R_partWall_inv.T, 1e-6), 'R_partWall_inv not symmetric'
+
 C_partWall_inv = np.array([[0, 1, 0],
                            [1, 0, 1],
                            [0, 1, 0]])
+
+assert np.allclose(C_partWall_inv, C_partWall_inv.T, 1e-6), 'C_partWall_inv not symmetric'
 
 asset = Asset(zones, R_partWall_inv, C_partWall_inv)
 

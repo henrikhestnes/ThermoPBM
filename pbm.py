@@ -87,16 +87,16 @@ if __name__ == "__main__":
     #Initial values
     T_rooms = np.array([[3], [3], [3]])
     T_wall = np.array([[1], [1], [1]])
-    T_out = 0
+    T_out = 20
 
     u = np.array([
         [0,0,0], 
         [0,0,0], 
-        [10,0,0]
+        [0,0,0]
         ])
 
     delta_t = 1e-2
-    N = 100
+    N = 5000
     for i in range(N):
         T_rooms, T_wall = step(T_rooms, T_wall, T_out, R_inv_internal, R_inv_wall, u,  C_inv_rooms, C_inv_walls, delta_t)
         print(T_rooms)
