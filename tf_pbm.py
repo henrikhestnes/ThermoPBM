@@ -29,7 +29,6 @@ class TemperatureUpdateLayer(tf.keras.layers.Layer):
         T = inputs[0]
         rhs = inputs[1]
         change = tf.math.multiply(self.C_inv, rhs)
-
         T_new = tf.keras.layers.Add(name='T_out')([T , self.delta_t*change])
         return T_new
 
@@ -51,13 +50,19 @@ class WallOutsideExchangeLayer(tf.keras.layers.Layer):
         
         self.R_inv_out_wall_outside = tf.Variable(R_inv_out_wall_outside.reshape((1, *R_inv_out_wall_outside.shape)), dtype=tf.float32, trainable=True)
         self.R_inv_out_wall = tf.Variable(R_inv_out_wall.reshape((1, *R_inv_out_wall.shape)), dtype=tf.float32, trainable=True)
+        self.divide = tf.math.divide_no_nan
 
     def call(self, inputs):
         T_wall = inputs[0]
         T_out = inputs[1]
         u_outside = inputs[2]
 
-        out_wall_to_wall_exchange = (self.R_inv_out_wall * u_outside + self.R_inv_out_wall*self.R_inv_out_wall_outside*(T_out - T_wall))/(self.R_inv_out_wall + self.R_inv_out_wall_outside)
+        diff = T_out - T_wall
+        R_prod = self.R_inv_out_wall*self.R_inv_out_wall_outside
+        R_sum = self.R_inv_out_wall + self.R_inv_out_wall_outside
+        scaled_diff = R_prod * diff
+
+        out_wall_to_wall_exchange = self.divide(self.R_inv_out_wall* u_outside + scaled_diff, R_sum)
 
         return out_wall_to_wall_exchange
 
@@ -67,6 +72,7 @@ class RoomWallExchange(tf.keras.layers.Layer):
         super(RoomWallExchange, self).__init__()
         self.R_inv_in_wall = tf.Variable(R_inv_in_wall.reshape((1, *R_inv_in_wall.shape)), dtype=tf.float32, trainable=True)
         self.R_inv_room_wall = tf.Variable(R_inv_room_wall.reshape((1, *R_inv_room_wall.shape)), dtype=tf.float32, trainable=True)
+        self.divide = tf.math.divide_no_nan
 
     def call(self, inputs):
         T_rooms = inputs[0]
@@ -76,9 +82,9 @@ class RoomWallExchange(tf.keras.layers.Layer):
         in_wall_R_prod_T_diff = self.R_inv_in_wall * self.R_inv_room_wall * (T_rooms - T_wall)
         in_wall_R_sum = self.R_inv_in_wall + self.R_inv_room_wall
 
-        in_wall_to_wall_exchange = (self.R_inv_in_wall * u_inside + in_wall_R_prod_T_diff)/in_wall_R_sum
+        in_wall_to_wall_exchange = self.divide(self.R_inv_in_wall * u_inside + in_wall_R_prod_T_diff, in_wall_R_sum)
 
-        in_wall_to_room_exchange = (self.R_inv_room_wall * u_inside - in_wall_R_prod_T_diff)/in_wall_R_sum
+        in_wall_to_room_exchange = self.divide(self.R_inv_room_wall * u_inside - in_wall_R_prod_T_diff, in_wall_R_sum)
 
         return in_wall_to_wall_exchange, in_wall_to_room_exchange
 
