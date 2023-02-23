@@ -52,6 +52,7 @@ def get_rhs(T_rooms: np.ndarray,T_wall: np.ndarray,T_out: float, R_inv_internal:
     R_inv_out_wall_sum[R_inv_out_wall_sum == 0] = 1
 
     out_wall_to_wall_exchange = (R_inv_out_wall * u_out_wall + R_inv_out_wall*R_inv_out_wall_outside*(T_out - T_wall))/R_inv_out_wall_sum
+    print(R_inv_out_wall_sum)
 
     in_wall_R_prod_T_diff = np.multiply(R_inv_in_wall*R_inv_room_wall, (T_rooms - T_wall))
     in_wall_R_sum = R_inv_in_wall + R_inv_room_wall
@@ -76,17 +77,18 @@ def step(T_rooms: np.ndarray, T_wall: np.ndarray, T_out:float,R_inv_internal: np
 if __name__ == "__main__":
     #Asset values
     sim_asset = asset.get_asset()
-    R_inv_internal = sim_asset.R_partWall_inv
+    R_inv_internal = sim_asset.get_R_partWall_open_inv()
     
     R_inv_wall = sim_asset.get_R_inv()
 
-    C_inv_rooms = sim_asset.C_room_inv
-    C_inv_walls = sim_asset.C_wall_inv
+    C_inv_rooms = sim_asset.get_C_open_inv()[0]
+    C_inv_walls = sim_asset.get_C_open_inv()[1]
 
     #Initial values
-    T_rooms = np.array([[3], [3], [3]])
-    T_wall = np.array([[1], [1], [1]])
-    T_out = 20
+    T_rooms, T_wall, T_out = asset.get_initial_values()
+    T_rooms = T_rooms.reshape(-1,1)
+    T_wall = T_wall.reshape(-1,1)
+    T_out = T_out.reshape(-1,1)
 
     u = np.array([
         [0,0,0], 
@@ -98,5 +100,5 @@ if __name__ == "__main__":
     N = 5000
     for i in range(N):
         T_rooms, T_wall = step(T_rooms, T_wall, T_out, R_inv_internal, R_inv_wall, u,  C_inv_rooms, C_inv_walls, delta_t)
-        print(T_rooms)
-        print(T_wall)
+        print(f"T_ROOMS{T_rooms}")
+        print(f"T_WALL{T_wall}")
