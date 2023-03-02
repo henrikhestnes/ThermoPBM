@@ -164,7 +164,7 @@ class ThermoPBMLayer(nn.Module):
         num_rooms: int,
         delta_t: float,
         num_u = 1,
-        num_direct_connections = 1, 
+        num_direct_connections = 1,
 
         R_inv_internal=None, 
         variable_R_inv_internal=False,
@@ -248,7 +248,7 @@ class ThermoPBMLayer(nn.Module):
 
 
     
-    def forward(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on):
+    def forward(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term):
 
         u_direct = self.u_direct(u_is_on)
         u_direct_sum = torch.sum(u_direct, 2, keepdim=True)
@@ -264,8 +264,8 @@ class ThermoPBMLayer(nn.Module):
 
         internal_exchange = self.internal_exchange(T_rooms, internal_exchange_is_on)
 
-        rhs_rooms = torch.sum(torch.stack([in_wall_to_room_exchange, internal_exchange, u_direct_sum, sum_direct_connections_exchange]), dim=0)
-        rhs_wall = torch.add(in_wall_to_wall_exchange, out_wall_to_wall_exchange)
+        rhs_rooms = torch.sum(torch.stack([in_wall_to_room_exchange, internal_exchange, u_direct_sum, sum_direct_connections_exchange, corrective_source_term[:,0]]), dim=0)
+        rhs_wall = torch.sum(torch.stack([in_wall_to_wall_exchange, out_wall_to_wall_exchange, corrective_source_term[:,1]]), dim=0)
 
         T_rooms_new = self.temperature_update_room(T_rooms, rhs_rooms)
         T_wall_new = self.temperature_update_wall(T_wall, rhs_wall)
@@ -324,10 +324,11 @@ if __name__ == '__main__':
     R_internal_on = torch.tensor([[[0, 1, 0],
                               [1, 0, 0],
                               [0, 0, 0]]])
-
+    
+    corrective_source_term = torch.tensor([ [[[0], [0], [0]], [[0], [0], [0]]] ])
     T = 1
     for i in range(int(T/delta_t)):
-        T_new_rooms, T_new_wall = single_step_layer(T_new_rooms, T_new_wall, T_out, T_direct_connections, u_is_on, R_internal_on, direct_connection_is_on)
+        T_new_rooms, T_new_wall = single_step_layer(T_new_rooms, T_new_wall, T_out, T_direct_connections, u_is_on, R_internal_on, direct_connection_is_on, corrective_source_term)
 
     print(T_new_rooms)
     print(T_new_wall)

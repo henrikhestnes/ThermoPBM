@@ -230,7 +230,7 @@ class ThermoPBMLayer(tf.keras.layers.Layer):
 
 
     
-    def call(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on):
+    def call(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term):
 
         u_direct = self.u_direct(u_is_on)
         u_direct_sum = tf.reduce_sum(u_direct, axis=2, keepdims=True)
@@ -249,9 +249,8 @@ class ThermoPBMLayer(tf.keras.layers.Layer):
 
         sum_direct_connections_exchange = self.sum_direct_connections(direct_connections_exchange)
 
-
-        rhs_rooms = tf.keras.layers.Add()([in_wall_to_room_exchange, sum_direct_connections_exchange, internal_exchange, u_direct_sum])
-        rhs_wall = tf.keras.layers.Add()([in_wall_to_wall_exchange, out_wall_to_wall_exchange])
+        rhs_rooms = tf.keras.layers.Add()([in_wall_to_room_exchange, sum_direct_connections_exchange, internal_exchange, u_direct_sum, corrective_source_term[:,0]])
+        rhs_wall = tf.keras.layers.Add()([in_wall_to_wall_exchange, out_wall_to_wall_exchange, corrective_source_term[:,1]])
 
         T_rooms_new = self.temperature_update_room(T_rooms, rhs_rooms)
         T_wall_new = self.temperature_update_wall(T_wall, rhs_wall)
@@ -261,6 +260,12 @@ class ThermoPBMLayer(tf.keras.layers.Layer):
 
 def create_tf_single_step_layer(num_rooms: int, delta_t: float, num_u=1, num_direct_connections=1, variable_R_internal=True,  R_inv_internal=None, R_inv_walls=None, C_inv_rooms=None, C_inv_walls=None, u_gains=None):
     print("Creating tf single step layer")
+    
+
+
+    thermo_layer = ThermoPBMLayer(num_rooms, delta_t,num_u=num_u, num_direct_connections=num_direct_connections, variable_R_inv_internal=variable_R_internal, R_inv_internal=R_inv_internal, R_inv_walls=R_inv_walls, C_inv_rooms=C_inv_rooms, C_inv_walls=C_inv_walls, u_gains=u_gains)
+    
+    
     T_rooms = tf.keras.Input(shape=(num_rooms,1), name="T_rooms")
     T_wall = tf.keras.Input(shape=(num_rooms,1), name="T_wall")
 
@@ -272,12 +277,16 @@ def create_tf_single_step_layer(num_rooms: int, delta_t: float, num_u=1, num_dir
     internal_exchange_is_on = tf.keras.Input(shape=(num_rooms, num_rooms), name="internal_exchange_is_on")
     direct_connection_is_on = tf.keras.Input(shape=(num_direct_connections, num_rooms, 1), name="ventilation_is_on")
 
+    corrective_source_term = tf.keras.Input(shape=(2,num_rooms,1), name="corrective_source_term")
 
-    thermo_layer = ThermoPBMLayer(num_rooms, delta_t,num_u=num_u, num_direct_connections=num_direct_connections, variable_R_inv_internal=variable_R_internal, R_inv_internal=R_inv_internal, R_inv_walls=R_inv_walls, C_inv_rooms=C_inv_rooms, C_inv_walls=C_inv_walls, u_gains=u_gains)
+    inputs = [T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connection_is_on, corrective_source_term]
 
-    T_new_rooms, T_new_wall = thermo_layer.call(T_rooms, T_wall, T_out, T_direct_connections ,u_is_on, internal_exchange_is_on, direct_connection_is_on)
 
-    return tf.keras.Model(inputs=[T_rooms, T_wall, T_out,T_direct_connections, u_is_on, internal_exchange_is_on, direct_connection_is_on], outputs=[T_new_rooms, T_new_wall])
+    
+
+    T_new_rooms, T_new_wall = thermo_layer.call(*inputs)
+
+    return tf.keras.Model(inputs=inputs, outputs=[T_new_rooms, T_new_wall])
 
 if __name__ == '__main__':
     #Asset values
@@ -320,10 +329,12 @@ if __name__ == '__main__':
     R_internal_on = np.array([[[0, 1, 0],
                               [1, 0, 1],
                               [0, 1, 0]]])
+    
+    corrective_source_term = np.array([ [ [[0],[0],[0]], [[0],[0],[0]] ] ])
 
     T = 1
     for i in range(int(T/delta_t)):
-        T_new_rooms, T_new_wall = tf_single_step_layer([T_new_rooms, T_new_wall, T_out, T_direct_connections, u_is_on, R_internal_on, direct_connection_is_on])
+        T_new_rooms, T_new_wall = tf_single_step_layer([T_new_rooms, T_new_wall, T_out, T_direct_connections, u_is_on, R_internal_on, direct_connection_is_on, corrective_source_term])
 
     print(T_new_rooms)
     print(T_new_wall)
