@@ -12,8 +12,9 @@ def torch_divide_no_nan(x, y, name=None):
 class InternalExchangeLayer(nn.Module):
     def __init__(self, R_inv_internal_on, R_inv_internal_off=None, trainable=True, name=None):
         super().__init__()
-        num_rooms = R_inv_internal.shape[0]
+        num_rooms = R_inv_internal_on.shape[0]
         self.num_rooms = num_rooms
+        # TODO: Ensure that  the matrixes are symmetric
         self.R_inv_combination = InputCombinationLayer(R_inv_internal_on, R_inv_internal_off, trainable=trainable, name="R_inv_internal", inverse=True)
 
     def forward(self, T_rooms, R_is_on):
@@ -164,6 +165,7 @@ class ThermoPBMLayer(nn.Module):
         delta_t: float,
         num_u = 1,
         num_direct_connections = 1, 
+
         R_inv_internal=None, 
         variable_R_inv_internal=False,
         R_inv_walls=None, 
@@ -179,8 +181,8 @@ class ThermoPBMLayer(nn.Module):
         u_gains_trainable=True,
         R_internal_trainable=True,
         C_rooms_trainable=True,
-
         R_direct_connections_trainable=True,
+
         name=None,
         ):
         super().__init__()
@@ -246,7 +248,7 @@ class ThermoPBMLayer(nn.Module):
 
 
     
-    def forward(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_on, direct_connections_is_on):
+    def forward(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on):
 
         u_direct = self.u_direct(u_is_on)
         u_direct_sum = torch.sum(u_direct, 2, keepdim=True)
@@ -260,7 +262,7 @@ class ThermoPBMLayer(nn.Module):
   
             sum_direct_connections_exchange = torch.add(sum_direct_connections_exchange, direct_exchange)
 
-        internal_exchange = self.internal_exchange(T_rooms, internal_exchange_on)
+        internal_exchange = self.internal_exchange(T_rooms, internal_exchange_is_on)
 
         rhs_rooms = torch.sum(torch.stack([in_wall_to_room_exchange, internal_exchange, u_direct_sum, sum_direct_connections_exchange]), dim=0)
         rhs_wall = torch.add(in_wall_to_wall_exchange, out_wall_to_wall_exchange)
@@ -278,20 +280,21 @@ if __name__ == '__main__':
     
     
     #Asset values
-    sim_asset = asset.get_asset()
+    #sim_asset = asset.get_asset()
     
-    R_inv_internal = sim_asset.R_partWall_inv
+    #R_inv_internal = sim_asset.R_partWall_inv
     
-    R_inv_wall = sim_asset.get_R_inv()
+    #R_inv_wall = sim_asset.get_R_inv()
 
-    C_inv_rooms = sim_asset.C_room_inv
-    C_inv_walls = sim_asset.C_wall_inv
+    #C_inv_rooms = sim_asset.C_room_inv
+    #C_inv_walls = sim_asset.C_wall_inv
 
-    num_rooms = C_inv_rooms.size
+    #num_rooms = C_inv_rooms.size
+    num_rooms = 3
     num_u = 2
     num_ventilation = 2
 
-    R_inv_wall = np.hstack((R_inv_wall, np.zeros((num_rooms, 1))))
+    #R_inv_wall = np.hstack((R_inv_wall, np.zeros((num_rooms, 1))))
 
     torch.tensor
     #Initial values
