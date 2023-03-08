@@ -6,7 +6,7 @@ import asset
 class InternalExchangeLayer(tf.keras.layers.Layer):
     def __init__(self, R_inv_internal_on, R_inv_internal_off=None, trainable=True, name=None):
         super(InternalExchangeLayer, self).__init__()
-        num_rooms = R_inv_internal.shape[0]
+        num_rooms = R_inv_internal_on.shape[0]
         self.num_rooms = num_rooms
         # TODO: Ensure that  the matrixes are symmetric
         self.R_inv_combination = InputCombinationLayer(R_inv_internal_on, R_inv_internal_off, trainable=trainable, name="R_inv_internal")
