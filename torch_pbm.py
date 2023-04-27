@@ -250,6 +250,14 @@ class ThermoPBMLayer(nn.Module):
     
     def forward(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term):
 
+        rhs_rooms, rhs_wall = self.calculate_rhs(T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term)
+
+        T_rooms_new = self.temperature_update_room(T_rooms, rhs_rooms)
+        T_wall_new = self.temperature_update_wall(T_wall, rhs_wall)
+
+        return T_rooms_new.float(), T_wall_new.float()
+    
+    def calculate_rhs(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term):
         u_direct = self.u_direct(u_is_on)
         u_direct_sum = torch.sum(u_direct, 2, keepdim=True)
 
@@ -263,15 +271,19 @@ class ThermoPBMLayer(nn.Module):
             sum_direct_connections_exchange = torch.add(sum_direct_connections_exchange, direct_exchange)
 
         internal_exchange = self.internal_exchange(T_rooms, internal_exchange_is_on)
-
+    
         rhs_rooms = torch.sum(torch.stack([in_wall_to_room_exchange, internal_exchange, u_direct_sum, sum_direct_connections_exchange, corrective_source_term[:,0]]), dim=0)
         rhs_wall = torch.sum(torch.stack([in_wall_to_wall_exchange, out_wall_to_wall_exchange, corrective_source_term[:,1]]), dim=0)
-
-        T_rooms_new = self.temperature_update_room(T_rooms, rhs_rooms)
-        T_wall_new = self.temperature_update_wall(T_wall, rhs_wall)
-
-        return T_rooms_new, T_wall_new
+        return rhs_rooms.float(), rhs_wall.float()
     
+    def calculate_lhs(self, T_rooms, T_wall):
+        C_rooms = torch.inverse(torch.diag(self.temperature_update_room.C_inv.squeeze()))
+        C_wall = torch.inverse(torch.diag(self.temperature_update_wall.C_inv.squeeze()))
+
+        lhs_rooms = C_rooms*T_rooms
+        lhs_wall = C_wall*T_wall
+
+        return lhs_rooms.float(), lhs_wall.float()
 
 
 if __name__ == '__main__':
@@ -301,14 +313,13 @@ if __name__ == '__main__':
     T_rooms = torch.tensor([[[3], [3], [3]]])
     T_wall = torch.tensor([[[1], [1], [1]]])
     T_out = torch.tensor([[1]])
-
     T_direct_connections = torch.tensor([[1, 1]])
 
     u_gains = np.zeros((num_u, num_rooms, 6))
     R_inv_ventilation = np.zeros((num_ventilation, num_rooms, 2))
 
 
-    delta_t = 1e-2
+    delta_t = 1
 
     single_step_layer = ThermoPBMLayer(num_rooms, delta_t, num_u=2, num_direct_connections=2)
 
@@ -326,10 +337,10 @@ if __name__ == '__main__':
                               [0, 0, 0]]])
     
     corrective_source_term = torch.tensor([ [[[0], [0], [0]], [[0], [0], [0]]] ])
+
     T = 1
     for i in range(int(T/delta_t)):
         T_new_rooms, T_new_wall = single_step_layer(T_new_rooms, T_new_wall, T_out, T_direct_connections, u_is_on, R_internal_on, direct_connection_is_on, corrective_source_term)
 
     print(T_new_rooms)
     print(T_new_wall)
-    
