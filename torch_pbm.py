@@ -255,7 +255,7 @@ class ThermoPBMLayer(nn.Module):
         T_rooms_new = self.temperature_update_room(T_rooms, rhs_rooms)
         T_wall_new = self.temperature_update_wall(T_wall, rhs_wall)
 
-        return T_rooms_new, T_wall_new
+        return T_rooms_new.float(), T_wall_new.float()
     
     def calculate_rhs(self, T_rooms, T_wall, T_out, T_direct_connections, u_is_on, internal_exchange_is_on, direct_connections_is_on, corrective_source_term):
         u_direct = self.u_direct(u_is_on)
@@ -274,7 +274,7 @@ class ThermoPBMLayer(nn.Module):
     
         rhs_rooms = torch.sum(torch.stack([in_wall_to_room_exchange, internal_exchange, u_direct_sum, sum_direct_connections_exchange, corrective_source_term[:,0]]), dim=0)
         rhs_wall = torch.sum(torch.stack([in_wall_to_wall_exchange, out_wall_to_wall_exchange, corrective_source_term[:,1]]), dim=0)
-        return rhs_rooms, rhs_wall
+        return rhs_rooms.float(), rhs_wall.float()
     
     def calculate_lhs(self, T_rooms, T_wall):
         C_rooms = torch.inverse(torch.diag(self.temperature_update_room.C_inv.squeeze()))
@@ -283,7 +283,7 @@ class ThermoPBMLayer(nn.Module):
         lhs_rooms = C_rooms*T_rooms
         lhs_wall = C_wall*T_wall
 
-        return lhs_rooms, lhs_wall
+        return lhs_rooms.float(), lhs_wall.float()
 
 
 if __name__ == '__main__':
