@@ -116,14 +116,51 @@ class Asset:
 
     
             
-bedroom = Zone("bedroom", [1,1,1,1,np.inf], [1,1])
-livingroom = Zone("livingroom", [1,1,1,1,np.inf], [1,1])
-bath = Zone("bath", [1,1,1,1,np.inf], [1,1])
+gfBedroom = Zone("gfBedroom",       [0.34146, 1.36584, 1.36584, 0.34146],           [41652.8784, 402850.8])
+gfLivingroom = Zone("gfLivingroom", [0.598068, 2.392272, 2.392272, 0.598068],       [157355.3184, 747837.36])
+stairs = Zone("stairs",             [0.4067498, 1.6269992, 1.6269992, 0.4067498],   [69035.7892, 647290.4264])
+gfBath = Zone("gfBath",             [0.2705976, 1.0823904, 1.0823904, 0.2705976],   [44159.7646, 434698.992])
+gfStorage = Zone("gfStorage",       [0.2901384, 1.1605536, 1.1605536, 0.2901384],   [49173.537, 466090.128])
+f1Guestroom = Zone("f1Guestroom",   [0.366948, 1.467792, 1.467792, 0.366948],       [49944.8866, 443795.76])
+f1Mainroom = Zone("f1Mainroom",     [0.421254, 1.685016, 1.685016, 0.421254],       [66721.7404, 525431.88])
+f1Sleep3 = Zone("f1Sleep3",         [0.370791, 1.483164, 1.483164, 0.370791],       [49559.2118, 486390.42])
+f1Bath = Zone("f1Bath",             [0.172752, 0.691008, 0.691008, 0.172752],       [37796.1304, 277515.84])
+f1Storage = Zone("f1Storage",       [0.423831, 1.695324, 1.695324, 0.423831],       [26033.049, 673890.636])
+f1Entrance = Zone("f1Entrance",     [0.123192, 0.492768, 0.492768, 0.123192],       [88512.3666, 197900.64])
+f2Livingroom = Zone("f2Livingroom", [2.6243349, 10.4973396, 10.4973396, 2.6243349], [345178.946, 3373189.904])
+f2Office = Zone("f2Office",         [0.3805635, 1.522254, 1.522254, 0.3805635],     [42424.228, 462828.5916])
+zones = [gfBedroom, gfLivingroom, stairs, gfBath, gfStorage, f1Guestroom, f1Mainroom, f1Sleep3, f1Bath, f1Storage, f1Entrance, f2Livingroom, f2Office]
 
-connections = [{"rooms": ["bedroom", "livingroom"], "R_open": 1, "R_closed": 10, "C_open": 10, "C_closed": 1},
-               {"rooms": ["livingroom", "bath"], "R_open": 1, "R_closed": 10, "C_open": 10, "C_closed": 1}]
-
-zones = [bedroom, livingroom, bath]
+connections =  [{"rooms": ["gfBedroom", "gfLivingroom"],    "R": 10.35216, "C": 179373.6}, 
+                {"rooms": ["gfBedroom", "stairs"],          "R": 4.43664, "C": 76874.4},
+                {"rooms": ["gfBedroom", "f1Guestroom"],     "R": 2.016, "C": 207012.6},
+                {"rooms": ["gfLivingroom", "gfBath"],       "R": 9.785256, "C": 169550.76},
+                {"rooms": ["gfLivingroom", "stairs"],       "R": 38.10888, "C": 0},
+                {"rooms": ["gfLivingroom", "f1Entrance"],   "R": 2.7216, "C": 279467.01},
+                {"rooms": ["gfLivingroom", "f1Mainroom"],   "R": 3.2256, "C": 331220.16},
+                {"rooms": ["gfBath", "gfStorage"],          "R": 5.91552, "C": 102499.2},
+                {"rooms": ["gfBath", "f1Sleep3"],           "R": 1.12896, "C": 115927.056},
+                {"rooms": ["gfStorage", "stairs"],          "R": 4.43664, "C": 76874.4},
+                {"rooms": ["gfStorage", "f1Bath"],          "R": 1.82784, "C": 187691.424},
+                {"rooms": ["f1Guestroom", "f1Mainroom"],    "R": 7.3944, "C": 128124},
+                {"rooms": ["f1Guestroom", "f1Entrance"],    "R": 4.43664, "C": 76874.4},
+                {"rooms": ["f1Guestroom", "stairs"],        "R": 4.43664, "C": 76874.4},
+                {"rooms": ["f1Guestroom", "f2Livingroom"],  "R": 2.4192, "C": 248415.12},
+                {"rooms": ["f1Mainroom", "f1Sleep3"],       "R": 5.17608, "C": 89686.8},
+                {"rooms": ["f1Mainroom", "f1Entrance"],     "R": 6.65496, "C": 115311.6},
+                {"rooms": ["f1Mainroom", "f2Livingroom"],   "R": 3.2256, "C": 331220.16},
+                {"rooms": ["f1Sleep3", "f1Entrance"],       "R": 12.57048, "C": 217810.8},
+                {"rooms": ["f1Sleep3", "f2Livingroom"],     "R": 2.39904, "C": 246344.994},
+                {"rooms": ["f1Entrance", "f1Bath"],         "R": 3.94368, "C": 68332.8},
+                {"rooms": ["f1Entrance", "stairs"],         "R": 38.10888, "C": 0},
+                {"rooms": ["f1Entrance", "f2Livingroom"],   "R": 4.28064, "C": 439556.754},
+                {"rooms": ["f1Bath", "f1Storage"],          "R": 0.72216, "C": 116010.72},
+                {"rooms": ["f1Bath", "stairs"],             "R": 4.43664, "C": 76874.4},
+                {"rooms": ["f1Bath", "f2Office"],           "R": 1.82784, "C": 187691.424},
+                {"rooms": ["f2Livingroom", "f2Office"],     "R": 12.089844, "C": 209482.74},
+                {"rooms": ["f2Livingroom", "stairs"],       "R": 43.131254, "C": 0},
+                {"rooms": ["f2Office", "stairs"],           "R": 4.729335, "C": 81945.975}]
+zones = [gfBedroom, gfLivingroom, stairs, gfBath, gfStorage, f1Guestroom, f1Mainroom, f1Sleep3, f1Bath, f1Storage, f1Entrance, f2Livingroom, f2Office]
 asset = Asset(zones, connections)
 
 out_temperature = 20
